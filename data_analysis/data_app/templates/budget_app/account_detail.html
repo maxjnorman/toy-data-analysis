@@ -1,0 +1,43 @@
+{% extends 'budget_app/base.html' %}
+
+{% block content %}
+  <div class="account">
+    {% if account.published_date %}
+      <div class="pub-date">
+        <p>Uploaded; {{ account.published_date }}</p>
+      </div>
+    {% endif %}
+    <a class="btn btn-default" href="{% url 'account_edit' pk=account.pk %}">Edit Account Properties</a>
+    <h1>{{ account.name }}</h1>
+  </div>
+  <div class="account">
+    <table border="2">
+      <div class="account-headings">
+        <div class="account-cell">
+          <tr>
+            <th>{{ account.heading_date }}</th>
+            <th>{{ account.heading_description }}</th>
+            <th>{{ account.heading_in }}</th>
+            <th>{{ account.heading_out }}</th>
+            <th>{{ account.heading_balance }}</th>
+          </tr>
+        </div>
+      </div>
+      {% for transaction in account.transactions.all %}
+        <div class="transaction">
+          <div class="table-cell" style="width": 50px;>
+            <tr>
+              <td>{{ transaction.trans_date }}</td>
+              <td>{{ transaction.description }}</td>
+              <td>{{ transaction.money_in }}</td>
+              <td>{{ transaction.money_out }}</td>
+              <td>{{ transaction.balance }}</td>
+            </tr>
+          </div>
+        </div>
+      {% empty %}
+        <p>Empty data set</P>
+      {% endfor %}
+  </div>
+  <a class="btn btn-default" href="{% url 'input_transaction' pk=account.pk %}">Input Transaction</a>
+{% endblock %}

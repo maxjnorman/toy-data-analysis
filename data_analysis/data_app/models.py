@@ -18,4 +18,4 @@ class TableEntry(models.Model):
     y_value = models.FloatField(null=True)
 
     def __str__(self):
-        return self.x_value, self.y_value
+        return '%s %s' % (self.x_value, self.y_value)

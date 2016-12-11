@@ -4,9 +4,9 @@
   {% for account in accounts %}
     <div class="post">
       <div class="date">
-        <p>{{ account.publish_date }}</p>
+        <p>{{ account.published_date }}</p>
       </div>
-      <h1><a href="{% url 'account_detail' pk=account.pk %}">{{ account.name }}</a>
+      <h1><a href="{% url 'account_detail' pk=account.pk %}">{{ account.account_name }}</a>
     </div>
   {% empty %}
     <p>No accounts to display</p>

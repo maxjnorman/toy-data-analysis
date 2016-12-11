@@ -13,6 +13,7 @@ class AccountCreateForm(forms.ModelForm):
             'heading_in',
             'heading_out',
             'heading_balance',
+            'initial_balance', 
         )
 
 

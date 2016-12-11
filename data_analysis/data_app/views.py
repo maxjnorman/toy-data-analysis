@@ -10,7 +10,7 @@ from .forms import AccountCreateForm, AccountEditForm, TransactionInputForm
 
 def account_list(request):
     accounts = Account.objects.all()
-    return render(request, 'budget_app/account_list.html', {'accounts' : account})
+    return render(request, 'budget_app/account_list.html', {'accounts' : accounts})
 
 def account_detail(request, pk):
     accounts = get_object_or_404(Account, pk=pk)

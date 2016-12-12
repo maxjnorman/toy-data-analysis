@@ -2,7 +2,7 @@
 
 {% block content %}
     <h1><a href="{% url 'account_detail' pk=account.pk %}">{{ account.account_name }}</a>
-    <h1>Input Transaction</h1>
+    <h1>Edit Transaction</h1>
     <form method="POST" class="post-form" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p }}

@@ -1,7 +1,20 @@
 {% extends 'budget_app/base.html' %}
 
 {% block content %}
+
   <a class="btn btn-default" href="{% url 'account_edit' pk=account.pk %}">Edit Account Properties</a>
+  <a class="btn btn-default" href="{% url 'account_delete' pk=account.pk %}">Delete Account</a>
+  <a class="btn btn-default" href="{% url 'file_upload' pk=account.pk %}">Upload Data File</a>
+
+  <div class="upload_file">
+    {% for upload_file in upload_set %}
+      {{forloop.counter}}.<a href="{% url 'populate_fields' pk=upload_file.pk %}">{{ upload_file.docfile }}</a>
+      ({{upload_file.upload_date}})<a href="{% url 'file_delete' pk=upload_file.pk %}">Delete File</a>
+      <a href="{{upload_file.docfile.url}}">Download File</a>
+      <hr />
+    {% endfor %}
+  </div>
+
   <div class="account">
     {% if account.published_date %}
       <div class="account-name">
@@ -57,4 +70,7 @@
       {% endfor %}
   </div>
   <a class="btn btn-default" href="{% url 'transaction_input' pk=account.pk %}">Input Transaction</a>
+  <a class="btn btn-default" href="{% url 'recalculate_account' pk=account.pk %}">Recalculate Balance</a>
+  <a class="btn btn-default" href="{% url 'clear_transactions' pk=account.pk %}">Clear All Transactions</a>
+
 {% endblock %}

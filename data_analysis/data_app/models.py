@@ -1,7 +1,9 @@
 from django.db import models
 from django.utils import timezone
+from django.db.models import Sum
 from django.db.models.functions import Coalesce
 
+from uploader.models import Upload
 
 class Account(models.Model):
     account_name = models.CharField(max_length=100)
@@ -18,6 +20,52 @@ class Account(models.Model):
 
     def __str__(self):
         return self.account_name
+
+    def get_transaction_set(self):
+        transaction_set = Transaction.objects.filter(account__pk=self.pk).order_by('-trans_date')
+        return transaction_set
+
+    def get_upload_set(self):
+        upload_set = Upload.objects.filter(account__pk=self.pk).order_by('-upload_date')
+        return upload_set
+
+    def recalculate_transactions_all(self, transaction_set):
+        if transaction_set.exists():
+            # Calculate the current balance
+            net_input_sum = transaction_set.aggregate(current_balance=Sum('net_input'))
+            current_balance = net_input_sum['current_balance'] + self.initial_balance
+            self.current_balance = current_balance
+            self.recalculate_balance = False
+            self.save()
+            # Calculate the balance at each transaction
+            for transaction in transaction_set:
+                transaction.balance = current_balance
+                current_balance = current_balance - transaction.net_input
+                transaction.save()
+        else:
+            self.current_balance = self.initial_balance
+            self.save()
+
+    def recalculate_transactions(self, transaction_set):
+        recalculate_balance_set = transaction_set.filter(recalculate_balance=1)
+        if recalculate_balance_set.exists():
+            # Calculate the current balance
+            net_input_sum = transaction_set.aggregate(current_balance=Sum('net_input'))
+            current_balance = net_input_sum['current_balance'] + self.initial_balance
+            self.current_balance = current_balance
+            self.save()
+            # Find the oldest incorrect transaction
+            first_recalculate_transaction = recalculate_balance_set[0] # Note: order_by('-trans_date') above, hence [0] for oldest
+            first_recalculate_date = first_recalculate_transaction.trans_date
+            for transaction in transaction_set.filter(trans_date__gte=first_recalculate_date):
+                transaction.balance = current_balance
+                current_balance = current_balance - transaction.net_input
+                transaction.recalculate_balance = False
+                transaction.save()
+        else:
+            pass
+
+
 
 
 class Transaction(models.Model):

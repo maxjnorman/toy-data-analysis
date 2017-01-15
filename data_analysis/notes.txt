@@ -1,0 +1,5 @@
+When deleting uploaded files, need to add functionality to delete files
+from the media/documents folder as app only deletes them from the database.
+http://stackoverflow.com/questions/17663809/deleting-uploaded-files-in-django
+need to use --> os.remove(os.path.join(settings.MEDIA_ROOT, self.docfile.name))
+Also, maybe best to add these functions to the upload model itself?

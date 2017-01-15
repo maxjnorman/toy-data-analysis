@@ -1,6 +1,7 @@
 {% extends 'budget_app/base.html' %}
 
 {% block content %}
+
     <h1><a href="{% url 'account_detail' pk=account.pk %}">{{ account.account_name }}</a>
     <h1>Edit Transaction</h1>
     <form method="POST" class="post-form" enctype="multipart/form-data">
@@ -8,4 +9,5 @@
         {{ form.as_p }}
         <button type="submit" class="save btn btn-default">Send</button>
     </form>
+
 {% endblock %}

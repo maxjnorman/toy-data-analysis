@@ -4,8 +4,8 @@ from django.db.models.functions import Coalesce
 from django.db.models import Sum, Count
 
 from .models import Account, Transaction
-from .forms import AccountCreateForm, AccountEditForm, TransactionInputForm, TransactionEditForm
-
+from uploader.models import Upload
+from .forms import AccountCreateForm, AccountEditForm, TransactionForm
 
 def account_list(request):
     accounts = Account.objects.all()
@@ -13,46 +13,14 @@ def account_list(request):
 
 
 def account_detail(request, pk):
-    # Access the database
     account = get_object_or_404(Account, pk=pk)
-    transaction_set = Transaction.objects.filter(account__pk=pk).order_by('-trans_date')
-    # Check if the whole account needs recalculating
+    transaction_set = account.get_transaction_set()
+    upload_set = account.get_upload_set()
     if account.recalculate_balance == 1:
-        if transaction_set.exists():
-            # Calculate the current balance
-            net_input_sum = transaction_set.aggregate(current_balance=Sum('net_input'))
-            current_balance = net_input_sum['current_balance'] + account.initial_balance
-            account.current_balance = current_balance
-            account.recalculate_balance = False
-            account.save()
-            # Calculate the balance at each transaction
-            for transaction in transaction_set:
-                transaction.balance = current_balance
-                current_balance = current_balance - transaction.net_input
-                transaction.save()
-        else:
-            account.current_balance = account.initial_balance
-            account.save()
-    elif transaction_set.exists():
-        recalculate_balance_set = transaction_set.filter(recalculate_balance=True)
-        if recalculate_balance_set.exists():
-            # Calculate the current balance
-            net_input_sum = transaction_set.aggregate(current_balance=Sum('net_input'))
-            current_balance = net_input_sum['current_balance'] + account.initial_balance
-            account.current_balance = current_balance
-            account.save()
-            # Find the oldest 'Null' transaction
-            first_recalculate_transaction = recalculate_balance_set.first()
-            first_recalculate_date = first_recalculate_transaction.trans_date
-            for transaction in transaction_set.filter(trans_date__gte=first_recalculate_date):
-                transaction.balance = current_balance
-                current_balance = current_balance - transaction.net_input
-                transaction.recalculate_balance = False
-                transaction.save()
-        else: pass
+        account.recalculate_transactions_all(transaction_set)
     else:
-        pass
-    return render(request, 'budget_app/account_detail.html', {'account': account, 'transaction_set': transaction_set})
+        account.recalculate_transactions(transaction_set)
+    return render(request, 'budget_app/account_detail.html', {'account': account, 'transaction_set': transaction_set, 'upload_set': upload_set})
 
 
 def account_create(request):
@@ -82,19 +50,48 @@ def account_edit(request, pk):
     return render(request, 'budget_app/account_edit.html', {'form': form})
 
 
+def account_delete(request, pk):
+    account = get_object_or_404(Account, pk=pk)
+    transaction_set = account.get_transaction_set()
+    upload_set = account.get_upload_set()
+    for data_file in upload_set:
+        data_file.delete()
+    for transaction in transaction_set:
+        transaction.delete()
+    account.delete()
+    return redirect(account_list)
+
+
+def clear_transactions(request, pk):
+    account = get_object_or_404(Account, pk=pk)
+    transaction_set = account.get_transaction_set()
+    transaction_set.delete()
+    #for transaction in transaction_set:
+        #transaction.delete()
+    return redirect(account_detail, pk=account.pk)
+
+
+def recalculate_account(request, pk):
+    account = get_object_or_404(Account, pk=pk)
+    account.recalculate_balance=True
+    account.save()
+    return redirect(account_detail, pk=account.pk)
+
+
 def transaction_input(request, pk):
     account = get_object_or_404(Account, pk=pk)
     if request.method == "POST":
-        form = TransactionInputForm(request.POST)
+        form = TransactionForm(request.POST)
         if form.is_valid():
             transaction = form.save(commit=False)
             transaction.account = account
             transaction.nulls_to_zero()
             transaction.calc_net_input()
+            transaction.recalculate_balance=True
             transaction.save()
             return redirect('account_detail', pk=account.pk)
     else:
-        form = TransactionInputForm()
+        form = TransactionForm()
     return render(request, 'budget_app/transaction_input.html', {'form': form, 'account': account})
 
 
@@ -102,7 +99,7 @@ def transaction_edit(request, pk):
     transaction = get_object_or_404(Transaction, pk=pk)
     account = transaction.account
     if request.method == "POST":
-        form = TransactionEditForm(request.POST, instance=transaction)
+        form = TransactionForm(request.POST, instance=transaction)
         if form.is_valid():
             transaction = form.save(commit=False)
             transaction.nulls_to_zero()
@@ -111,7 +108,7 @@ def transaction_edit(request, pk):
             transaction.save()
             return redirect('account_detail', pk=account.pk)
     else:
-        form = TransactionEditForm(instance=transaction)
+        form = TransactionForm(instance=transaction)
     return render(request, 'budget_app/transaction_edit.html', {'form': form, 'account': account})
 
 

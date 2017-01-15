@@ -1,6 +1,7 @@
 {% extends 'budget_app/base.html' %}
 
 {% block content %}
+
   {% for account in accounts %}
     <div class="post">
       <h1><a href="{% url 'account_detail' pk=account.pk %}">{{ account.account_name }}</a>
@@ -12,4 +13,5 @@
   {% empty %}
     <p>No accounts to display</p>
   {% endfor %}
+
 {% endblock content %}

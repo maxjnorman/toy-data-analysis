@@ -9,7 +9,7 @@
   <div class="upload_file">
     {% for upload_file in uploads %}
       {{forloop.counter}}.<a href="{% url 'populate_fields' pk=upload_file.pk %}">{{ upload_file.name }}</a>
-      ({{ upload_file.docfile }}; {{ upload_file.upload_date }})
+      ({{ upload_file.docfile }}; {{upload_file.upload_date}})
       <a href="{% url 'file_delete' pk=upload_file.pk %}">Delete File</a>
       <a href="{{upload_file.docfile.url}}">Download File</a>
       <hr />
@@ -19,18 +19,19 @@
   <div class="account">
     {% if account.created_date %}
       <div class="account-details">
-        <h1>{{ account.account_name }}</h1>
+        <h1><a href="{% url 'account_detail' pk=account.pk %}">{{ account.account_name }}</a></h1>
         <p>Created: {{ account.created_date }}</p>
         <p>Initial Balance: £{{ account.initial_balance }}</p>
-        <p>Account Balance: £{{account_balance }}</p>
+        <h1>{{ year.year }}</h1>
+        <p>Year Balance: £{{ account_balance }}</p>
       </div>
     {% endif %} <!--maybe link to 'create account' if no account present -->
   </div>
 
-  <div class="year">
-    {% for year in years %}
-      <div class="year-details">
-        <a class="btn btn-default" href="{% url 'year_detail' pk=year.pk %}">{{ year.year }}</a>
+  <div class="month">
+    {% for month in months %}
+      <div class="month-details">
+        <p><a href="{% url 'month_detail' pk=month.pk %}">{{ month.month_name }}</a></p>
       </div>
     {% endfor %}
   </div>

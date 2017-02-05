@@ -1,0 +1,71 @@
+{% extends 'budget_app/base.html' %}
+
+{% block content %}
+
+  <a class="btn btn-default" href="{% url 'account_edit' pk=account.pk %}">Edit Account Properties</a>
+  <a class="btn btn-default" href="{% url 'account_delete' pk=account.pk %}">Delete Account</a>
+  <a class="btn btn-default" href="{% url 'file_upload' pk=account.pk %}">Upload Data File</a>
+
+  <div class="upload_file">
+    {% for upload_file in uploads%}
+      {{forloop.counter}}.<a href="{% url 'populate_fields' pk=upload_file.pk %}">{{ upload_file.name }}</a>
+      ({{ upload_file.docfile }}; {{upload_file.upload_date}})
+      <a href="{% url 'file_delete' pk=upload_file.pk %}">Delete File</a>
+      <a href="{{upload_file.docfile.url}}">Download File</a>
+      <hr />
+    {% endfor %}
+  </div>
+
+  <div class="account">
+    {% if account.created_date %}
+      <div class="account-details">
+        <h1>{{ account.account_name }}</h1>
+        <h1><a href="{% url 'year_detail' pk=year.pk %}">{{ year.year }}</a></h1>
+        <h1>{{ month.month_name }}</h1>
+        <p>Month Balance: £{{ current_balance }}</p>
+        <a class="btn btn-default" href="{% url 'transaction_input' pk=month.pk %}">Input Transaction</a>
+      </div>
+    {% endif %} <!--maybe link to 'create account' if no account present -->
+  </div>
+
+  <div class="transactions">
+    <table border="2">
+      <div class="account-headings">
+        <div class="account-cell">
+          <tr>
+            <th>{{ account.heading_date }}</th>
+            <th>{{ account.heading_description }}</th>
+            <th>{{ account.heading_in }}</th>
+            <th>{{ account.heading_out }}</th>
+            <th>{{ account.heading_balance }}</th>
+          </tr>
+        </div>
+      </div>
+      {% for transaction, balance in zipped_transactions %}
+        <div class="transaction">
+          <div class="table-cell" style="width": 50px;>
+            <tr>
+              <td>{{ transaction.trans_date }}</td>
+              <td>{{ transaction.description }}</td>
+              {% if transaction.money_in == 0 %}
+                <td></td>
+              {% else %}
+                <td>£{{ transaction.money_in }}</td>
+              {% endif %}
+              {% if transaction.money_out == 0 %}
+                <td></td>
+              {% else %}
+                <td>£{{ transaction.money_out }}</td>
+              {% endif %}
+              <td>£{{ balance }}</td>
+              <td>
+                <a class="btn-default" href="{% url 'transaction_edit' pk=transaction.pk %}">Edit</a>
+                <a class="btn-default" href="{% url 'transaction_delete' pk=transaction.pk %}">Delete</a>
+              </td>
+            </tr>
+          </div>
+        </div>
+      {% endfor %}
+  </div>
+
+{% endblock %}

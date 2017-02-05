@@ -31,6 +31,8 @@ def delete_file(request, pk):
     return redirect('account_detail', pk=account.pk)
 
 
+# Note: will now need three of these views. App shouldn't populte across the
+# whole year if invoked at the month level, etc...
 def populate_fields(request, pk):
     uploaded_file = get_object_or_404(Upload, pk=pk)
     account = uploaded_file.account

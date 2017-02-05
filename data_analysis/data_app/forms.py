@@ -8,6 +8,8 @@ class AccountCreateForm(forms.ModelForm):
         model = Account
         fields = (
             'account_name',
+            'description',
+            'start_date',
             'initial_balance',
         )
 
@@ -18,12 +20,14 @@ class AccountEditForm(forms.ModelForm):
         model = Account
         fields = (
             'account_name',
+            'description',
+            'start_date',
+            'initial_balance',
             'heading_date',
             'heading_description',
             'heading_in',
             'heading_out',
             'heading_balance',
-            'initial_balance',
         )
 
 

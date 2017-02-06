@@ -12,8 +12,8 @@ from calendar import monthrange
 class Account(models.Model):
     account_name = models.CharField(max_length=100)
     description = models.CharField(max_length=1000, blank=True, null=True)
-    created_date = models.DateTimeField(default=timezone.now)
-    start_date = models.DateTimeField(default=timezone.now)
+    created_date = models.DateField(default=timezone.now)
+    start_date = models.DateField(default=timezone.now)
     initial_balance = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=False, default=0)
     # Note: might be best to keep these headings around to display at all
     # levels; year, month, etc...
@@ -26,30 +26,25 @@ class Account(models.Model):
     def __str__(self):
         return self.account_name
 
-    def create_current_year(self):
-        current_year = timezone.now().year
-        year_obj = Year.objects.filter(account__pk=self.pk, year=current_year)
-        if year_obj.exists():
-            pass
-        else:
-            year_obj = Year.objects.create(
-                account=self,
-                year=current_year,
-            )
-
-    def create_missing_years(self):
-        current_year = timezone.now().year
-        database_year_set = set(Year.objects.filter(account__pk=self.pk).values_list('year', flat=True))
-        year_set = set(range(self.start_date.year, current_year + 1))
+    def create_year_set(self):
+        database_year_set = set(Year.objects.filter(
+            account__pk=self.pk,
+            year__gte=self.start_date.year,
+            year__lte=timezone.now().year
+        ).values_list('year', flat=True))
+        year_set = set(range(self.start_date.year, timezone.now().year + 1))
         if database_year_set == year_set:
             pass
         else:
             missing_years = year_set.difference(database_year_set)
+            new_years = []
             for n in missing_years:
-                Year.objects.get_or_create(
+                new_year = Year(
                     account=self,
                     year=n,
                 )
+                new_years.append(new_year)
+            Year.objects.bulk_create(new_years)
 
 
 
@@ -57,36 +52,32 @@ class Account(models.Model):
 class Year(models.Model):
     account = models.ForeignKey('data_app.Account', related_name='years')
     year = models.IntegerField() # Note: can input invalid years. Needs to be 4 digits.
-    #year = models.DateTimeField()
-    #initial_balance = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
-    #net_input = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
-    #balance = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
 
     def __str__(self):
         return '%s %s' % (self.account, self.year)
 
     def get_create_month_set(self):
-        current_year = timezone.now().year
-        current_month = timezone.now().month
-        current_months = Month.objects.filter(
-            year__pk=self.pk,
-            month_date__gte=self.account.start_date,
-        ).values_list('month_date', flat=True)
-        if self.account.start_date.year < current_year:
+        # Note: needs a total rewrite...
+        if self.year > self.account.start_date.year:
             start_month = 1
         else:
             start_month = self.account.start_date.month
-        current_month_list = []
-        for month_date in current_months:
-            current_month_list.append(month_date.month)
-        if self.year == current_year:
-            month_list = list(range(start_month, current_month + 1)) #list from Jan to 'today'
+        if self.year < timezone.now().year:
+            end_month = 12
         else:
-            month_list = list(range(start_month, 13)) #list of all months in some past year
-        if set(month_list) == set(current_month_list):
+            end_month = timezone.now().month
+        month_list = list(range(start_month, end_month + 1))
+        database_months = Month.objects.filter(
+            year__pk=self.pk,
+        ).values_list('month_date', flat=True)
+        database_month_list = []
+        for month_date in database_months:
+            database_month_list.append(month_date.month)
+        if set(database_month_list) == set(month_list):
             pass
         else:
-            missing_months = list(set(month_list).difference(set(current_month_list)))
+            missing_months = set(month_list).difference(set(database_month_list))
+            new_months = []
             for n in missing_months:
                 new_month = Month(
                     account=self.account,
@@ -95,10 +86,12 @@ class Year(models.Model):
                     month_name=get_month_name(n),
                 )
                 new_month.remove_nulls()
-                new_month.save()
+                new_months.append(new_month)
+            Month.objects.bulk_create(new_months)
         months = Month.objects.filter(
             year__pk=self.pk,
-            month_date__gte=self.account.start_date,
+            month_date__month__gte=start_month,
+            month_date__month__lte=end_month,
         ).order_by('-month_date')
         return months
 
@@ -108,12 +101,9 @@ class Year(models.Model):
 class Month(models.Model):
     account = models.ForeignKey('data_app.Account', related_name='months')
     year = models.ForeignKey('data_app.Year', related_name='months')
-    #month = models.IntegerField() # Note: can input invalid months
-    month_date = models.DateTimeField()
+    month_date = models.DateField()
     month_name = models.CharField(max_length=15)
-    #initial_balance = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
-    net_input = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)  # Note: can calc balance from net_inputs instead
-    #balance = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)    # Note: balace is a database entry so that if can be accessed from Year objects.
+    net_input = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)  # Note: can calc balance from net_inputs
 
     def __str__(self):
         return '%s %s' % (self.month_name)
@@ -121,14 +111,15 @@ class Month(models.Model):
     def remove_nulls(self):
         self.net_input = Coalesce(self.net_input, 0)
 
-    def set_month_name(self):  # Note: not used yet.
+    def set_month_name(self):
         month_name = get_month_name(self.month_date.month)
         if self.month_name == month_name:
             pass
         else:
             self.month_name = month_name
 
-    #takes in a month object and returns the two adjacent months
+    # Note: not used yet
+    # Note: takes in a month object and returns the two adjacent months
     def get_adjacent_months(self, month_object): # Note: used at the month_detail level
         month_date = month_object.month_date
         end_day = monthrange(month_date.year, month_date.month)[1]

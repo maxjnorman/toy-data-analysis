@@ -3,3 +3,7 @@ from the media/documents folder as app only deletes them from the database.
 http://stackoverflow.com/questions/17663809/deleting-uploaded-files-in-django
 need to use --> os.remove(os.path.join(settings.MEDIA_ROOT, self.docfile.name))
 Also, maybe best to add these functions to the upload model itself?
+
+
+Seems pretty simple to add a confirmation popup using javascript.
+http://stackoverflow.com/questions/16849117/html-how-to-do-a-confirmation-popup-to-a-submit-button-and-then-send-the-reque

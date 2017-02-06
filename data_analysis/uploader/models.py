@@ -6,7 +6,7 @@ from django.forms import ModelForm
 class Upload(models.Model):
     docfile = models.FileField("Document", upload_to="documents/")
     upload_date = models.DateTimeField(auto_now_add=True)
-    account = models.ForeignKey('data_app.Account', related_name='uploaded_files')
+    account = models.ForeignKey('data_app.Account', related_name='uploads')
 
 # FileUpload form class.
 class UploadForm(ModelForm):

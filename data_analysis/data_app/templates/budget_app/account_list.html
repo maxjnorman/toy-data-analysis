@@ -2,13 +2,14 @@
 
 {% block content %}
 
-  {% for account in accounts %}
+  {% for account, balance in zipped_accounts %}
     <div class="post">
       <h1><a href="{% url 'account_detail' pk=account.pk %}">{{ account.account_name }}</a>
       <a class="btn btn-default" href="{% url 'account_edit' pk=account.pk %}">Edit Account Properties</a>
+      <a class="btn btn-default" href="{% url 'account_delete' pk=account.pk %}">Delete Account</a>
     </div>
     <div class="current-balance">
-      <p>Account Balance: £{{ account.current_balance }}</p>
+      <p>Account Balance: £{{ balance }}</p>
     </div>
   {% empty %}
     <p>No accounts to display</p>

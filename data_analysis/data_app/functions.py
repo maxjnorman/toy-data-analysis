@@ -7,12 +7,7 @@ def calc_net_input(object_set):
     else:
         net_input_sum = 0
     return net_input_sum
-    # Note: calc_net_input could be combined with an if statement to save databse hits,
-    # e.g., calc_net_input = month.calc_net_input(transaction_set)
-    #       if month.net_input == calc_net_input:
-    #           pass
-    #       else:
-    #           month.net_input = calc_net_input
+
 
 def get_net_inputs(object_set):
     if object_set.exists():
@@ -20,6 +15,7 @@ def get_net_inputs(object_set):
     else:
         net_inputs = []
     return net_inputs
+
 
 def get_month_name(integer):
     month_dict = {

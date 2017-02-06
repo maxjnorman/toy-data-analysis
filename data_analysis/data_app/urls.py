@@ -12,7 +12,10 @@ urlpatterns = [
     url(r'^month/(?P<pk>\d+)/$', views.month_detail, name='month_detail'),
     url(r'^account/(?P<pk>\d+)/clear/$', views.clear_transactions, name='clear_transactions'),
     url(r'^account/(?P<pk>\d+)/recalculate/$', views.recalculate_account, name='recalculate_account'),
-    url(r'^account/(?P<pk>\d+)/transaction/entry/$', views.transaction_input, name='transaction_input'),
+    url(r'^account/(?P<pk>\d+)/transaction/input/$', views.transaction_input, name='transaction_input'),    # Note: soon to be defunct
+    url(r'^account/(?P<pk>\d+)/transaction/input/$', views.transaction_input_account, name='transaction_input_account'),
+    url(r'^year/(?P<pk>\d+)/transaction/input/$', views.transaction_input_year, name='transaction_input_year'),
+    url(r'^month/(?P<pk>\d+)/transaction/input/$', views.transaction_input_month, name='transaction_input_month'),
     url(r'^account/(?P<pk>\d+)/transaction/edit/$', views.transaction_edit, name='transaction_edit'),
     url(r'^account/(?P<pk>\d+)/transaction/delete/$', views.transaction_delete, name='transaction_delete'),
 ]

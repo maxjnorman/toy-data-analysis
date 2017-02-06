@@ -60,7 +60,7 @@ def populate_fields(request, pk):
         transaction.nulls_to_zero()
         transaction.calc_net_input()
         transaction_list.append(transaction)
-        # Note: below is not really unsatisfactory
+        # Note: below is not really satisfactory
         # needs to be done to reduce number of SQL objects
         if n % 50 == 0 or n == number_of_rows - 1:
             Transaction.objects.bulk_create(transaction_list)

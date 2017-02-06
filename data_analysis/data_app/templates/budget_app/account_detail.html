@@ -6,12 +6,13 @@
   <a class="btn btn-default" href="{% url 'account_delete' pk=account.pk %}">Delete Account</a>
   <a class="btn btn-default" href="{% url 'file_upload' pk=account.pk %}">Upload Data File</a>
 
-  <div class="upload_file">
-    {% for upload_file in uploads %}
-      {{forloop.counter}}.<a href="{% url 'populate_fields' pk=upload_file.pk %}">{{ upload_file.name }}</a>
-      ({{ upload_file.docfile }}; {{ upload_file.upload_date }})
-      <a href="{% url 'file_delete' pk=upload_file.pk %}">Delete File</a>
-      <a href="{{upload_file.docfile.url}}">Download File</a>
+  <div class="upload">
+    {% for upload in uploads %}
+      {{forloop.counter}}{{ upload.name }}
+      ({{ upload.docfile }}; {{ upload.upload_date }})
+      <a href="{% url 'populate_fields' pk=upload.pk %}">Populate Fields</a>
+      <a href="{% url 'file_delete' pk=upload.pk %}">Delete File</a>
+      <a href="{{upload.docfile.url}}">Download File</a>
       <hr />
     {% endfor %}
   </div>
@@ -21,10 +22,10 @@
       <div class="account-details">
         <h1>{{ account.account_name }}</h1>
         <p>Created: {{ account.created_date }}</p>
-        <p>Start Date: {{ account.start_date.date }}</p>
+        <p>Start Date: {{ account.start_date }}</p>
         <p>Initial Balance: £{{ account.initial_balance }}</p>
         <p>Account Balance: £{{ account_balance }}</p>
-        <a class="btn btn-default" href="{% url 'transaction_input' pk=account.pk %}">Input Transaction</a>
+        <a class="btn btn-default" href="{% url 'transaction_input_account' pk=account.pk %}">Input Transaction</a>
       </div>
     {% endif %} <!--maybe link to 'create account' if no account present -->
   </div>

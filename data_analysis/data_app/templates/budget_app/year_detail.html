@@ -3,7 +3,6 @@
 {% block content %}
 
   <a class="btn btn-default" href="{% url 'account_edit' pk=account.pk %}">Edit Account Properties</a>
-  <a class="btn btn-default" href="{% url 'account_delete' pk=account.pk %}">Delete Account</a>
   <a class="btn btn-default" href="{% url 'file_upload' pk=account.pk %}">Upload Data File</a>
 
   <div class="upload_file">
@@ -21,12 +20,12 @@
       <div class="account-details">
         <h1><a href="{% url 'account_detail' pk=account.pk %}">{{ account.account_name }}</a></h1>
         <p>Created: {{ account.created_date }}</p>
-        <p>Start Date: {{ account.start_date.date }}</p>
+        <p>Start Date: {{ account.start_date }}</p>
         <p>Initial Balance: £{{ account.initial_balance }}</p>
         <p>Account Balance: £{{ account_balance }}</p>
         <h1>{{ year.year }}</h1>
         <p>Year Balance: £Not implemented yet</p>
-        <a class="btn btn-default" href="{% url 'transaction_input' pk=account.pk %}">Input Transaction</a>
+        <a class="btn btn-default" href="{% url 'transaction_input_year' pk=year.pk %}">Input Transaction</a>
       </div>
     {% endif %} <!--maybe link to 'create account' if no account present -->
   </div>

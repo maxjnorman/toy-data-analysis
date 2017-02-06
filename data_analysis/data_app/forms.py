@@ -31,42 +31,6 @@ class AccountEditForm(forms.ModelForm):
         )
 
 
-class TransactionFormAccount(forms.ModelForm):
-
-    class Meta:
-        model = Transaction
-        fields = (
-            'trans_date',
-            'description',
-            'money_in',
-            'money_out',
-        )
-
-
-class TransactionFormYear(forms.ModelForm):
-
-    class Meta:
-        model = Transaction
-        fields = (
-            'trans_date',
-            'description',
-            'money_in',
-            'money_out',
-        )
-
-
-class TransactionFormMonth(forms.ModelForm):
-
-    class Meta:
-        model = Transaction
-        fields = (
-            'trans_date',
-            'description',
-            'money_in',
-            'money_out',
-        )
-
-
 class TransactionForm(forms.ModelForm):
 
     class Meta:

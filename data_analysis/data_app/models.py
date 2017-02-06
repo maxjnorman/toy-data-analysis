@@ -106,7 +106,7 @@ class Month(models.Model):
     net_input = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)  # Note: can calc balance from net_inputs
 
     def __str__(self):
-        return '%s %s' % (self.month_name)
+        return '%s' % (self.month_name)
 
     def remove_nulls(self):
         self.net_input = Coalesce(self.net_input, 0)
@@ -118,7 +118,7 @@ class Month(models.Model):
         else:
             self.month_name = month_name
 
-    # Note: not used yet
+    # Note: not used yet, also doesn't seem to work...
     # Note: takes in a month object and returns the two adjacent months
     def get_adjacent_months(self, month_object): # Note: used at the month_detail level
         month_date = month_object.month_date
@@ -141,6 +141,7 @@ class Transaction(models.Model):
     trans_date = models.DateField()
     description = models.CharField(max_length=250)
     id_description = models.CharField(max_length=250)   # Note: used to label transactions --> description from Santander excel file
+    id_balance = models.CharField(max_length=24)    # Note: may be good to use the balance to id 'valid' double payments from 'invalid' duplicate database entries
     money_in = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     money_out = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     net_input = models.DecimalField(max_digits=8, decimal_places=2, default=0)
@@ -153,7 +154,10 @@ class Transaction(models.Model):
     def set_id_description(self):   # Note: adding this as a default to id_description casues migration errors
         self.id_description = self.description
 
-    def calc_net_input(self):
+    def remove_nulls(self):
         self.money_in = Coalesce(self.money_in, 0)
         self.money_out = Coalesce(self.money_out, 0)
+
+    def calc_net_input(self):
+        self.remove_nulls()
         self.net_input = self.money_in - self.money_out

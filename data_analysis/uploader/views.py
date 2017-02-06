@@ -3,12 +3,14 @@ from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.utils import timezone
+from django import db
 
 from .models import Upload, UploadForm
 from data_app.models import Account, Year, Month, Transaction
 from .functions import build_transaction_dataframe
-from data_app.functions import get_month_name, calc_net_input
+from data_app.functions import get_month_name, calc_net_input, get_net_inputs
 
+import os
 import pandas as pd
 import numpy as np
 from datetime import datetime, date
@@ -26,13 +28,20 @@ def upload_file(request, pk):
     else:
         form=UploadForm()
     files=Upload.objects.all()
-    return render(request, 'uploader/upload_file.html', {'form':form, 'files':files})
+    return render(
+        request,
+        'uploader/upload_file.html',
+        {'form':form,
+        'files':files}
+    )
 
 
 def delete_file(request, pk):
-    data_file = get_object_or_404(Upload, pk=pk)
-    account = data_file.account
-    data_file.delete()
+    upload = get_object_or_404(Upload, pk=pk)
+    account = upload.account
+    file_location = upload.docfile.path
+    upload.delete()
+    os.remove(file_location)
     return redirect('account_detail', pk=account.pk)
 
 
@@ -40,7 +49,7 @@ def populate_fields(request, pk):
     upload = get_object_or_404(Upload, pk=pk)
     account = upload.account
     file_location = upload.docfile.path
-    data_frame, unique_months = build_transaction_dataframe(file_location, 0)   # Note: functions.py
+    data_frame, unique_months = build_transaction_dataframe(file_location, 0)
     transaction_frames = [
         data_frame[data_frame['month_dates']==month_date]
         for month_date
@@ -70,6 +79,12 @@ def populate_fields(request, pk):
             flag=False
         if flag is True:
             transaction_list = []
+            current_ids = list(month.transactions.all().values_list(
+                'trans_date',
+                'id_description',
+                'id_balance',
+                ))
+
             for n in range(0, month_tuple[1].shape[0]):
                 transaction = Transaction(
                     account=account,
@@ -84,56 +99,23 @@ def populate_fields(request, pk):
                     net_input=np.asscalar(month_tuple[1]['net_input'].iloc[n]),
                 )
                 transaction.remove_nulls()
-                transaction_list.append(transaction)
+                id_tuple = (
+                    transaction.trans_date.to_datetime().date(),
+                    str(transaction.id_description),
+                    str(transaction.id_balance),
+                )
+                if id_tuple in set(current_ids):
+                    pass
+                else:
+                    transaction_list.append(transaction)
             Transaction.objects.bulk_create(transaction_list)
-            valid_transactions = Transaction.objects.filter(
-                month__pk=month.pk,
+            valid_transactions = month.transactions.all().filter(
                 trans_date__gte=account.start_date,
+                trans_date__lte=timezone.now(),
             )
-            net_input_sum = calc_net_input(valid_transactions)
-            month.net_input += net_input_sum
+            net_input = calc_net_input(valid_transactions)
+            month.net_input = net_input
             month.save()
         else:
             pass
-    return redirect('account_detail', pk=account.pk)
-
-
-# Note: will now need three of these views. App shouldn't populte across the
-# whole year if invoked at the month level, etc...
-def populate_fields_old(request, pk):
-    uploaded_file = get_object_or_404(Upload, pk=pk)
-    account = uploaded_file.account
-    file_location = uploaded_file.docfile.path
-    data_frame = pd.read_excel(file_location)
-    data_frame.columns = ['trans_date', 'description', 'money_in', 'money_out', 'balance']
-    data_frame = data_frame.round(2)
-    number_of_rows = data_frame.shape[0]
-    transaction_list = []
-    for n in np.arange(0, number_of_rows):
-        trans_date = str(data_frame['trans_date'].iloc[n])[0:10]
-        description = str(data_frame['description'].iloc[n])
-        money_in = np.asscalar(data_frame['money_in'].iloc[n])
-        money_out = np.asscalar(data_frame['money_out'].iloc[n])
-        balance = np.asscalar(data_frame['balance'].iloc[n])
-        transaction = Transaction(
-            account=account,
-            trans_date=trans_date,
-            description=description,
-            money_in=money_in,
-            money_out=money_out,
-            balance=balance,
-            recalculate_balance=True
-        )
-        transaction.nulls_to_zero()
-        transaction.calc_net_input()
-        transaction_list.append(transaction)
-        # Note: below is not really satisfactory
-        # needs to be done to reduce number of SQL objects
-        if n % 50 == 0 or n == number_of_rows - 1:
-            Transaction.objects.bulk_create(transaction_list)
-            transaction_list = []
-        else:
-            pass
-    account.recalculate_balance = True
-    account.save()
     return redirect('account_detail', pk=account.pk)

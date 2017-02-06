@@ -9,6 +9,7 @@
       <a class="btn btn-default" href="{% url 'account_delete' pk=account.pk %}">Delete Account</a>
     </div>
     <div class="current-balance">
+      <p>Description: {{ account.description }}</p>
       <p>Account Balance: £{{ balance }}</p>
     </div>
   {% empty %}

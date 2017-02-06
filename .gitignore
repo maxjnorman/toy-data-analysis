@@ -6,3 +6,4 @@ zip_archive
 db.sqlite3
 /static
 .DS_Store
+run_development_server.bat

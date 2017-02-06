@@ -8,6 +8,7 @@ from uploader.models import Upload
 from .forms import AccountCreateForm, AccountEditForm, TransactionForm
 from .functions import calc_net_input, get_net_inputs, get_month_name
 
+import os
 from datetime import datetime, date
 
 def account_list(request):
@@ -154,33 +155,40 @@ def account_edit(request, pk):
             account = form.save(commit=False)
             account.create_year_set()
             account.save()
-            month_query = Month.objects.filter(
+            transaction_query = Transaction.objects.filter(
                 account__pk=account.pk,
-                month_date__year__gte=account.start_date.year,
-                month_date__month__gte=account.start_date.month,
-            ).order_by('month_date')[:1]
-            if month_query.exists():
-                oldest_month = month_query[0]
-            else:
-                oldest_year = Year.objects.get(
-                    account__pk=account.pk,
-                    year=account.start_date.year,
-                )
-                oldest_month = Month(
-                    account=account,
-                    year=oldest_year,
-                    month_date = date(account.start_date.year, account.start_date.month, 1),
-                    month_name=get_month_name(account.start_date.month),
-                )
-                oldest_month.remove_nulls()
-                oldest_month.save()
-            transactions = Transaction.objects.filter(
-                month__pk=oldest_month.pk,
                 trans_date__gte=account.start_date,
-            )
-            net_input = calc_net_input(transactions)
-            oldest_month.net_input = net_input
-            oldest_month.save()
+            ).order_by('trans_date')[:1]
+            if transaction_query.exists():
+                oldest_transaction = transaction_query[0]
+                oldest_month = oldest_transaction.month
+                transactions = oldest_month.transactions.all().filter(
+                    trans_date__gte=account.start_date,
+                )
+                net_input = calc_net_input(transactions)
+                oldest_month.net_input = net_input
+                oldest_month.save()
+            else:
+                pass
+                #oldest_year = Year.objects.get(
+                #    account__pk=account.pk,
+                #    year=account.start_date.year,
+                #)
+                #oldest_month = Month(
+                #    account=account,
+                #    year=oldest_year,
+                #    month_date = date(account.start_date.year, account.start_date.month, 1),
+                #    month_name=get_month_name(account.start_date.month),
+                #)
+                #oldest_month.remove_nulls()
+                #oldest_month.save()
+            #transactions = Transaction.objects.filter(
+                #month__pk=oldest_month.pk,
+                #trans_date__gte=account.start_date,
+            #)
+            #net_input = calc_net_input(transactions)
+            #oldest_month.net_input = net_input
+            #oldest_month.save()
             return redirect('account_detail', pk=account.pk)
     else:
         form = AccountEditForm(instance=account)
@@ -194,7 +202,10 @@ def account_edit(request, pk):
 def account_delete(request, pk):
     account = get_object_or_404(Account, pk=pk)
     uploads = account.uploads.all()
-    uploads.delete()
+    for upload in uploads:
+        file_location = upload.docfile.path
+        upload.delete()
+        os.remove(file_location)
     years = account.years.all()
     years.delete()
     months = account.months.all()

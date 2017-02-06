@@ -11,9 +11,12 @@ def calc_net_input(object_set):
 
 def get_net_inputs(object_set):
     if object_set.exists():
-        net_inputs = object_set.values_list('net_input', flat=True)
-    else:
+        net_input_cache = object_set.values_list('net_input', flat=True)
         net_inputs = []
+        for item in net_input_cache:
+            net_inputs.append(item)
+    else:
+        net_inputs = [0]
     return net_inputs
 
 
